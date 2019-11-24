@@ -16,6 +16,8 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     var posts = [PFObject]()
     var showCommentBar = false
+    var selectedPost: PFObject!
+    
     let commentBar = MessageInputBar()
     
     @IBOutlet weak var tableView: UITableView!
@@ -47,12 +49,33 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func messageInputBar(_ inputBar: MessageInputBar, didPressSendButtonWith text: String) {
-        //creater comment
+//        creater comment
+                let comment = PFObject(className: "Comments")
+        
+                comment["text"] = text
+                comment["post"] = selectedPost
+                comment["author"] = PFUser.current()!
+        
+                selectedPost.add(comment, forKey: "comments")
+        
+                selectedPost.saveInBackground{(success, error) in
+                    if success{
+                        print("comment saved")
+                    }
+                    else{
+                        print("ERROR comment NOT saved")
+                    }
+                }
+        
+        tableView.reloadData()
+        
+
+//        clear and dismiss bar
+        
         commentBar.inputTextView.text = nil
         showCommentBar = false
         becomeFirstResponder()
         commentBar.inputTextView.resignFirstResponder()
-//        clear and dismiss bar
     }
     
     override var canBecomeFirstResponder: Bool{
@@ -158,7 +181,7 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let post = posts[indexPath.row]
+        let post = posts[indexPath.section]
         let comments = (post["comments"] as? [PFObject]) ?? []
 
         
@@ -168,6 +191,7 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             commentBar.inputTextView.becomeFirstResponder()
         }
         
+        selectedPost = post
 //        comment["text"] = "This is a random comment"
 //        comment["post"] = post
 //        comment["author"] = PFUser.current()!
